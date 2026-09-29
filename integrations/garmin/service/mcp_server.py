@@ -6,6 +6,8 @@ from mcp.server import MCPServer
 from common import read_secret, date_range, daily_summary
 
 mcp=MCPServer('isa-garmin')
+from habits import register
+register(mcp)
 
 
 def query(sql,parameters=()):

@@ -9,7 +9,9 @@ async def main():
         result=await client.list_tools()
         tools=result.tools if hasattr(result,'tools') else result
         names=sorted(tool.name for tool in tools)
-        assert names==['garmin_activities','garmin_daily_summary','garmin_sync_status'],names
+        assert names==['garmin_activities','garmin_daily_summary','garmin_sync_status','habits_checkin','habits_history','habits_save'],names
+        checkin=await client.call_tool('habits_checkin',{'period':'morning','day':'2000-01-01'})
+        assert not checkin.is_error
         status=await client.call_tool('garmin_sync_status',{})
         data=status.structured_content
         if data is None and status.content:

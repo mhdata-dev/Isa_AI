@@ -44,6 +44,7 @@ services:
       - postgres17_data:/var/lib/postgresql/data
       - ./database/init.sh:/docker-entrypoint-initdb.d/0001-init.sh:ro
       - ./database/0001_garmin.sql:/opt/isa/0001_garmin.sql:ro
+      - ./database/0002_habits.sql:/opt/isa/0002_habits.sql:ro
     healthcheck:
       test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U postgres -d garmin"]
       interval: 10s

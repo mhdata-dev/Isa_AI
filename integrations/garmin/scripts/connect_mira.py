@@ -35,8 +35,8 @@ def main():
             if isinstance(existing.get('config_json'),str): config=json.loads(existing['config_json'])
             if config.get('url')!=MCP_URL:
                 raise SystemExit('Já existe um servidor garmin diferente. Nenhuma alteração foi feita nele.')
-            if not existing.get('enabled'):
-                api('PUT','/api/mcp/servers/'+existing['id'],{'enabled':True})
+            # Refresh tool discovery after adding check-in tools, without restarting Isa.
+            api('PUT','/api/mcp/servers/'+existing['id'],{'enabled':True})
             print('O servidor Garmin já está cadastrado.')
         else:
             api('POST','/api/mcp/servers',{'name':'garmin','transport':'http','url':MCP_URL,'enabled':True,'sampling_enabled':False})

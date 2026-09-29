@@ -94,6 +94,18 @@ O código MIRA encontrado suporta recarregar o registro após cadastro pela API/
 
 ## Dados e limites
 
+### Check-ins de hábitos por mensagem (inclusive Telegram)
+
+O MCP oferece `habits_checkin`, `habits_save` e `habits_history`. Após atualizar o servidor, execute `python3 scripts/connect_mira.py` e autentique-se na Isa para atualizar a descoberta das ferramentas. O Telegram usa as ferramentas da conta Isa vinculada ao canal.
+
+Envie **check-in matinal**, **fechar meu dia** ou **mostre minha tabela de hábitos dos últimos sete dias**. O assistente consulta os registros existentes, pergunta o que falta e salva respostas explícitas. Garmin e calendário servem de referência; avaliações subjetivas continuam sendo informadas pelo usuário. A disponibilidade do calendário depende das ferramentas já configuradas na conta.
+
+A tabela `habits.daily` contém uma linha por data, respostas JSON e horário da última atualização. Alterações parciais preservam os demais campos; `null` limpa somente o campo indicado. Notas aceitam inteiros de 0 a 10; água e jejum aceitam booleanos; horários de despertar usam HH:MM. Campos ausentes são desconhecidos. O horário real de dormir, com data e fuso, pode ser informado na manhã seguinte para o dia anterior. O jejum é registrado na data em que termina às 11h (início às 19h do dia anterior).
+
+Este é um diário pessoal único da instalação, compartilhado entre os canais do proprietário. Não é uma tabela separada por usuário. Não há lembretes automáticos. A conexão de hábitos permite INSERT/UPDATE somente em `habits.daily`; tabelas Garmin continuam com acesso SELECT pelo papel do MCP. O padrão de transação somente leitura é sobrescrito apenas pela conexão de hábitos.
+
+Em uma instalação existente, aplique `database/0002_habits.sql` com `psql -v ON_ERROR_STOP=1 -U postgres -d garmin` no container PostgreSQL desta integração. O teste `database/test_habits.sql` verifica a atualização parcial e os privilégios dentro de uma transação revertida. Nunca recrie o banco para aplicar esta migração.
+
 - Uma chave por data/métrica e uma chave por ID Garmin evitam duplicações. Uma nova leitura substitui somente dados mais antigos; métricas que falham não apagam leituras anteriores.
 - O banco guarda os payloads originais. O MCP retorna resumos com unidades explícitas e valores ausentes como `null`, sem inventar zeros ou oferecer interpretações médicas.
 - A data do sono segue a data da Garmin (normalmente o despertar). Consultas MCP aceitam no máximo 31 dias; atividades têm paginação.

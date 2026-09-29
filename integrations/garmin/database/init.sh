@@ -17,3 +17,4 @@ GRANT CONNECT ON DATABASE n8n TO n8n;
 SQL
 unset n8n_password writer_password reader_password
 psql -X -v ON_ERROR_STOP=1 --username postgres --dbname garmin -f /opt/isa/0001_garmin.sql
+psql -X -v ON_ERROR_STOP=1 --username postgres --dbname garmin -f /opt/isa/0002_habits.sql
