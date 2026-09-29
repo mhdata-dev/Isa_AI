@@ -1,0 +1,7 @@
+.env*
+secrets
+runtime
+__pycache__
+*.pyc
+*.db
+*tokens*.json

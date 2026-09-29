@@ -1,0 +1,4 @@
+garminconnect==0.3.16
+mcp==2.2.0
+uvicorn==0.52.4
+psycopg[binary]>=3.2,<4

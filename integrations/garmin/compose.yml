@@ -1,0 +1,144 @@
+name: isa-integrations
+
+networks:
+  database:
+    internal: true
+  ingestion:
+    internal: true
+  outbound: {}
+  mira:
+    name: isa-integrations-mira
+    internal: true
+
+volumes:
+  postgres17_data:
+  n8n_data:
+  garmin_session:
+
+secrets:
+  postgres_admin:
+    file: ./secrets/postgres_admin
+  n8n_database:
+    file: ./secrets/n8n_database
+  n8n_encryption:
+    file: ./secrets/n8n_encryption
+  garmin_writer:
+    file: ./secrets/garmin_writer
+  garmin_reader:
+    file: ./secrets/garmin_reader
+  collector_api:
+    file: ./secrets/collector_api
+
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: 0.5
+    networks: [database]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin
+      POSTGRES_DB: postgres
+    secrets: [postgres_admin, n8n_database, garmin_writer, garmin_reader]
+    volumes:
+      - postgres17_data:/var/lib/postgresql/data
+      - ./database/init.sh:/docker-entrypoint-initdb.d/0001-init.sh:ro
+      - ./database/0001_garmin.sql:/opt/isa/0001_garmin.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U postgres -d garmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.39.5@sha256:cfa04788a34ae6f5d59d9086c5761315be2457a9608969553bd0add9a94959d1
+    restart: unless-stopped
+    mem_limit: 1g
+    cpus: 1
+    networks: [database, ingestion, outbound]
+    ports:
+      - 127.0.0.1:5678:5678
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD_FILE: /run/secrets/n8n_database
+      N8N_ENCRYPTION_KEY_FILE: /run/secrets/n8n_encryption
+      N8N_HOST: localhost
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: http://localhost:5678
+      WEBHOOK_URL: http://localhost:5678/
+      N8N_SECURE_COOKIE: "true"
+      GENERIC_TIMEZONE: Europe/Madrid
+      TZ: Europe/Madrid
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "true"
+      N8N_CONCURRENCY_PRODUCTION_LIMIT: "1"
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: none
+      EXECUTIONS_DATA_SAVE_ON_ERROR: none
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "false"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "24"
+    secrets: [n8n_database, n8n_encryption]
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:5678/healthz/readiness').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
+
+  garmin-collector:
+    build: ./service
+    image: isa-garmin:local
+    command: [python, collector.py]
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    networks: [ingestion, outbound]
+    environment:
+      GARMIN_SESSION_DIR: /session
+      COLLECTOR_TOKEN_FILE: /run/secrets/collector_api
+      TZ: Europe/Madrid
+    secrets: [collector_api]
+    volumes:
+      - garmin_session:/session
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz',timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  garmin-mcp:
+    image: isa-garmin:local
+    command: [python, mcp_server.py]
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    networks:
+      database: {}
+      mira:
+        aliases: [isa-garmin-mcp]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: garmin
+      PGUSER: garmin_reader
+      PG_PASSWORD_FILE: /run/secrets/garmin_reader
+      TZ: Europe/Madrid
+    secrets: [garmin_reader]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('localhost',8000),3).close()"]
+      interval: 20s
+      timeout: 5s
+      retries: 5

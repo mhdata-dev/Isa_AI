@@ -65,7 +65,7 @@ Credenciais, tokens, histórico de conversas, configuração privada do MIRA, ba
 
 Leia [a referência da VPS](deploy/vps/README.md) antes de planejar qualquer implantação. O código publicado não deve ser copiado por cima da instalação ativa.
 
-A integração **Garmin Connect → n8n → PostgreSQL → Isa via MCP** está planejada, mas ainda não foi implementada nem implantada. O cliente escolhido é `python-garminconnect`.
+A integração **Garmin Connect → n8n → PostgreSQL → Isa via MCP** está implementada em [integrations/garmin](integrations/garmin/README.md) e instalada em um projeto Docker separado. Usa `python-garminconnect`, n8n 2.39.5 e PostgreSQL 17. A coleta real depende da autorização Garmin e o cadastro MCP depende do login do usuário da Isa. Nenhum dado de saúde está incluído neste repositório.
 
 ## Validação desta importação
 

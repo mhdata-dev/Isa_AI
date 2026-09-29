@@ -1,0 +1,257 @@
+[
+  {
+    "id": "isaGarminDailySync",
+    "name": "Isa - Garmin daily synchronization",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "id": "d0d0ffb7-5d6f-5dad-90e1-1895d491b589",
+        "name": "Manual",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {}
+      },
+      {
+        "id": "64f40627-dee3-51f5-b180-7dd88a6bdb85",
+        "name": "Daily schedule",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "15 8,20 * * *"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "ca1b8d04-7a8b-51e3-8761-36b03b541f65",
+        "name": "Garmin session",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          240,
+          0
+        ],
+        "parameters": {
+          "url": "http://garmin-collector:8000/status",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "isaGarminCollector",
+            "name": "Isa Garmin collector"
+          }
+        }
+      },
+      {
+        "id": "73b8eefe-938f-528e-a46c-4f4b829dd681",
+        "name": "Session available",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "session",
+                "leftValue": "={{ $json.session_available }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "cooldown",
+                "leftValue": "={{ $json.rate_limit_cooldown }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "false",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "f55e9126-e114-562c-a625-7e25c33cffa0",
+        "name": "Last seven days",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          0
+        ],
+        "parameters": {
+          "jsCode": "return Array.from({length:7}, (_,i)=>({json:{date:$now.setZone('Europe/Madrid').minus({days:6-i}).toISODate()}}));"
+        }
+      },
+      {
+        "id": "7720f694-0825-5572-a4fa-f449caa1e514",
+        "name": "Fetch daily snapshot",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          960,
+          0
+        ],
+        "parameters": {
+          "url": "={{ 'http://garmin-collector:8000/snapshot/' + $json.date }}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "timeout": 300000,
+            "batching": {
+              "batch": {
+                "batchSize": 1,
+                "batchInterval": 2000
+              }
+            }
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "isaGarminCollector",
+            "name": "Isa Garmin collector"
+          }
+        }
+      },
+      {
+        "id": "416b2535-958c-5d0f-aa74-edc630196b3d",
+        "name": "Store snapshot",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          1200,
+          0
+        ],
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT health.ingest_snapshot($1::jsonb) AS result;",
+          "options": {
+            "queryReplacement": "={{ [JSON.stringify($json)] }}",
+            "queryBatching": "independently"
+          }
+        },
+        "credentials": {
+          "postgres": {
+            "id": "isaGarminWriter",
+            "name": "Isa Garmin ingestion"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Manual": {
+        "main": [
+          [
+            {
+              "node": "Garmin session",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Daily schedule": {
+        "main": [
+          [
+            {
+              "node": "Garmin session",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Garmin session": {
+        "main": [
+          [
+            {
+              "node": "Session available",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session available": {
+        "main": [
+          [
+            {
+              "node": "Last seven days",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "Last seven days": {
+        "main": [
+          [
+            {
+              "node": "Fetch daily snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch daily snapshot": {
+        "main": [
+          [
+            {
+              "node": "Store snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "Europe/Madrid",
+      "executionTimeout": 1800,
+      "saveDataSuccessExecution": "none",
+      "saveDataErrorExecution": "none",
+      "saveManualExecutions": false
+    },
+    "nodeGroups": [],
+    "sourceWorkflowId": null,
+    "tags": []
+  }
+]
