@@ -1,0 +1,20 @@
+# Apenas as rotas da Isa; este arquivo NÃO substitui o Caddyfile compartilhado da VPS.
+{$ISA_DOMAIN} {
+    handle /manifest.json {
+        root * /srv
+        file_server
+    }
+
+    handle /auth/microsoft* {
+        reverse_proxy mcp-calendar:8001
+    }
+
+    handle /oauth/microsoft/callback* {
+        reverse_proxy mcp-calendar:8001
+    }
+
+    handle {
+        header Link "</manifest.json>; rel=\"manifest\""
+        reverse_proxy mira:8080
+    }
+}

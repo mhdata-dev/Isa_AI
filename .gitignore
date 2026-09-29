@@ -1,0 +1,33 @@
+# Credenciais e configuração privada
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+*tokens*.json
+.garminconnect/
+
+# Estado da aplicação e backups
+data/
+mira-data/
+runtime/
+backups/
+*.db
+*.db-*
+*.sqlite*
+*.log
+*.bak
+*.tar
+*.tar.gz
+*.zip
+
+# Ferramentas locais
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,76 @@
+# Referência histórica. Não executar sobre a instalação existente. Ver README.md.
+name: warp-drive-pilot
+networks:
+  internal:
+    internal: true
+  edge: {}
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    restart: unless-stopped
+    networks:
+    - internal
+    - edge
+    ports:
+    - 127.0.0.1:4000:4000
+    volumes:
+    - ./litellm/config.yaml:/app/config.yaml:ro
+    - ./litellm/drop_prompt_cache.py:/app/.venv/lib/python3.13/site-packages/drop_prompt_cache.py:ro
+    env_file: .env.pilot
+    command:
+    - --config
+    - /app/config.yaml
+    - --port
+    - '4000'
+    healthcheck:
+      test:
+      - CMD
+      - python3
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://localhost:4000/health/readiness')
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+  mira:
+    image: mira:local
+    restart: unless-stopped
+    networks:
+    - internal
+    - edge
+    ports:
+    - 127.0.0.1:8080:8080
+    volumes:
+    - ./data:/data
+    env_file: .env.pilot
+    depends_on:
+      litellm:
+        condition: service_healthy
+  mcp-calendar:
+    build:
+      context: /home/ops/isa-project/services/mcp-calendar
+    image: mcp-calendar:local
+    restart: unless-stopped
+    networks:
+    - internal
+    - edge
+    volumes:
+    - calendar_data:/data
+    env_file: /home/ops/isa-project/services/mcp-calendar/.env
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    networks:
+    - edge
+    ports:
+    - 80:80
+    - 443:443
+    - 443:443/udp
+    volumes:
+    - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    - caddy_data:/data
+    - caddy_logs:/var/log/caddy
+volumes:
+  caddy_data: null
+  caddy_logs: null
+  calendar_data: null

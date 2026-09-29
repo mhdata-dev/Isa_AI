@@ -1,0 +1,12 @@
+.env
+.env.*
+__pycache__
+*.pyc
+*.db
+*.db-*
+*.sqlite*
+*.pem
+*.key
+*tokens*.json
+.venv
+.git

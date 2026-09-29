@@ -1,0 +1,27 @@
+{
+  "observed_date": "2026-09-29",
+  "mira_upstream": "https://github.com/Vexillon-ai/MIRA.git",
+  "mira_checkout_commit": "043bbc2ffaa9afeadf2006d860c154a1510993d5",
+  "mira_image_source_verified": false,
+  "files_sha256": {
+    "litellm/config.yaml": "dacfd739f5bfb5a2bf47b638dcd7f1f83622fc774a798377fd8e73437d3c4f4d",
+    "litellm/drop_prompt_cache.py": "b13391f21be242dbc12b81db5495c183cad95d2e8259298f46086b587f2b0769",
+    "services/mcp-calendar/Dockerfile": "4cd4070e6bf223acc1cda17cb8b841a7dbd4043efa302274ec894f5b34a259f8",
+    "services/mcp-calendar/config.py": "b36d4b0c6665ab883b79258c4b1de6f5523a3122fb13ad4caceba8b5b590fcb8",
+    "services/mcp-calendar/fake_data.py": "76aeab44b65428702cb04ff4fef3c4a204ac4b78318a74e85fe3afc75d746dc6",
+    "services/mcp-calendar/models.py": "90e59d027fbda62e937ca9154d349eeaf17fbdcb66e14e5d25eab9465578bea5",
+    "services/mcp-calendar/oauth_microsoft.py": "c97fda67e514ad42971765ab050c2a86f934df0a020c8cf8dbe3da37b560522b",
+    "services/mcp-calendar/providers/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "services/mcp-calendar/providers/microsoft.py": "a7aa33430489993298aef7d7e22d8af88d60e3a716dbe0101daffaa055f0d563",
+    "services/mcp-calendar/requirements.txt": "fd5defd7bcac1d36cf238e7eedbf140ea17f61fec3c6a5b5b7c6ea0e520a9ee1",
+    "services/mcp-calendar/server.py": "649eb4ec2458dbb18584148552d46238022b2b0d898c16c731ec33a90949b8a6",
+    "services/mcp-calendar/token_store.py": "d016bd55c5a648ea77af97ad3a49e7e574e14360c1977dfee25b6652cfbf2f16"
+  },
+  "calendar_runtime_hashes_verified": [
+    "server.py",
+    "config.py",
+    "oauth_microsoft.py",
+    "token_store.py",
+    "providers/microsoft.py"
+  ]
+}
