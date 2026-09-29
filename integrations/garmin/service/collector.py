@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import time
 import uvicorn
@@ -10,6 +11,7 @@ from garmin_client import snapshot, session_available, SyncError
 
 TOKEN=read_secret('COLLECTOR_TOKEN_FILE')
 cooldown_until=0.0
+snapshot_queue=asyncio.Lock()
 
 
 def authorized(request):
@@ -27,6 +29,13 @@ async def status(request):
 
 
 async def daily(request):
+    if not authorized(request):
+        return JSONResponse({'error':'unauthorized'},status_code=401)
+    async with snapshot_queue:
+        return await daily_serial(request)
+
+
+async def daily_serial(request):
     global cooldown_until
     if not authorized(request):
         return JSONResponse({'error':'unauthorized'},status_code=401)
